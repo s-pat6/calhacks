@@ -26,3 +26,5 @@ tests/*.csv
 tests/*.ipynb
 tests/dataset/*.pkl
 venv
+venv
+pictures
