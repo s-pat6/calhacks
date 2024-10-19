@@ -21,6 +21,7 @@
             python311
             python311Packages.pandas
             python311Packages.numpy
+            python311Packages.pyaudio
            # python311Packages.opencv4
            pyopencv4
             #python311Packages.opencv4
