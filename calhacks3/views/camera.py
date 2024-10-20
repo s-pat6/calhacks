@@ -2,7 +2,8 @@ import asyncio
 import reflex as rx
 from PIL import Image
 from ..voice.main import generate_and_speak
-
+from .flower import display_first_item, FlowerState
+from .loveletter import love_letter_selector
 #class ImageState(rx.State):
 #    url: str = "https://github.com/reflex-dev"
 #    profile_image: str = (
@@ -17,6 +18,7 @@ from ..voice.main import generate_and_speak
 #        ).json()
 #        self.url = github_data["url"]
 #        self.profile_image = github_data["avatar_url"]
+
 
 from ..face_recog import latestimg
 class ImageState(rx.State):
@@ -247,15 +249,7 @@ def deploy_safety_measures() -> rx.Component:
 # Function to dynamically change the text based on the current step
 def dynamic_text():
     return rx.cond(
-        ButtonState.current_step == 1,
-        # rx.text(
-        #     "Gaslight!",  # Change the text to "Gaslight!"
-        #     font_family="Rubik Bubbles", 
-        #     font_size="36px", 
-        #     font_weight="thin",  
-        #     color="#FFFFFF",
-        #     text_align="left"
-        # ),
+        ButtonState.current_step % 5 == 1,
         rx.text(
             f"{gaslight_text}",
             font_family = "Rubik Bubbles",
@@ -264,9 +258,9 @@ def dynamic_text():
             text_align="left"
         ),
         rx.cond(
-            ButtonState.current_step == 2,
+            ButtonState.current_step % 5 == 2,
             rx.text(
-                "Love Letter!",  # Change the text to "Love Letter!"
+                love_letter_selector(),  # Change the text to "Love Letter!"
                 font_family="Rubik Bubbles", 
                 font_size="36px", 
                 font_weight="thin",  
@@ -274,17 +268,10 @@ def dynamic_text():
                 text_align="left"
             ),
             rx.cond(
-                ButtonState.current_step == 3,
-                rx.text(
-                    "Flowers",  # Change the text to "Flowers"
-                    font_family="Rubik Bubbles", 
-                    font_size="36px", 
-                    font_weight="thin",  
-                    color="#FFFFFF",
-                    text_align="left"
-                ),
+                ButtonState.current_step % 5 == 3,
+                display_first_item(),
                 rx.cond(
-                    ButtonState.current_step == 4,
+                    ButtonState.current_step % 5 == 4,
                     rx.text(
                         "3D Print",  # Change the text to "3D Print"
                         font_family="Rubik Bubbles", 
@@ -294,7 +281,7 @@ def dynamic_text():
                         text_align="left"
                     ),
                     rx.cond(
-                        ButtonState.current_step == 0,
+                        ButtonState.current_step % 5 == 0,
                         rx.box(
                             rx.text(
                                 "What! I'd never forget your...",  # Default text for "Home"
@@ -324,29 +311,28 @@ def dynamic_text():
             )
         )
     )
-
 def layout_with_video_and_another_component():
     return rx.flex(
         camera_feed(),  # Video on the left
         rx.box(
             rx.box(
-            dynamic_text(),  # Dynamically changing text based on the button pressed
-            bg="#ff006c",  # Background color of the text box
-            width="50%",  # Take the remaining 50% width
-            height="auto",  # Auto adjust height to match camera feed
-            display="flex",  # Flexbox display
-            flex_direction="column",  # Stack text items vertically
-            justify="center",  # Center text vertically
-            align="flex-end",  # Right-align the text box
-            padding="15px",  # Add padding for inner spacing
+                dynamic_text(),  # Pass dynamic content into this container
+                bg="#ff006c",  # Background color of the content box
+                width="100%",  # Take the remaining 50% width
+                height="auto",  # Auto adjust height to match the content
+                display="flex",  # Flexbox display
+                flex_direction="column",  # Stack items vertically (if needed)
+                justify="center",  # Center content vertically
+                align="flex-end",  # Right-align the content box
+                padding="15px",  # Add padding for inner spacing
             ),
-            bg="#ff006c",  # Background color of the text box
-            width="50%",  # Take the remaining 50% width
-            height="auto",  # Auto adjust height to match camera feed
+            bg="#ff006c",  # Background color of the outer box
+            width="50%",  # Take 50% of the width for the content box
+            height="auto",  # Automatically adjust the height to fit the content
             display="flex",  # Flexbox display
-            flex_direction="column",  # Stack text items vertically
-            justify="center",  # Center text vertically
-            align="flex-end",  # Right-align the text box
+            flex_direction="column",  # Stack items vertically (if needed)
+            justify="center",  # Center content vertically
+            align="flex-end",  # Right-align the content box
             padding="15px",  # Add padding for inner spacing
             border_radius="15px",  # Rounded corners
         ),
@@ -354,6 +340,7 @@ def layout_with_video_and_another_component():
         width="100%",  # The entire flex container takes up 100% width
         height="auto",  # Automatically adjust the height to fit both components
         align_items="stretch",  # Align items to stretch to the same height
+        align="center",  # Align items vertically in the middle
         background="#ff006c",  # Background color
         border_radius="15px",  # Ensure rounded border effect for the entire layout
     )
