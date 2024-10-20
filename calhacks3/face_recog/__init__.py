@@ -19,6 +19,18 @@ from deepface.commons.logger import Logger
 logger = Logger()
 from PIL import Image
 
+
+def get_emotions(f):
+     return DeepFace.analyze(
+        img_path=f,
+        actions=("emotion"), #"age", "gender"
+        detector_backend="skip",
+        enforce_detection=False,
+        silent=True,
+    )
+
+
+
 latestimg = [None]
 
 model_name = 'VGG-Face'
@@ -328,4 +340,5 @@ async def stuff():
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
+    print(get_emotions("./photodatabase/Karmanyaah/3.png"))
     stuff()
