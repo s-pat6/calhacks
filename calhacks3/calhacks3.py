@@ -3,8 +3,8 @@ import reflex as rx
 from .views.navbar import navbar
 from .views.email import email_gen_ui
 from .views.table import main_table
-from .views.camera import camera_feed, layout_with_video_and_another_component
-from .views.deploysafetymeasures import deploy_safety_measures
+from .views.camera import camera_feed, layout_with_video_and_another_component, deploy_safety_measures
+
 from .views.timer import countdown_clock
 from .backend.backend import State
 
