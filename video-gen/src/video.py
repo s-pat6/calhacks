@@ -3,6 +3,11 @@ import cv2
 import numpy as np
 from typing import List
 import subprocess
+import json
+
+
+STATIC_FOLDER = "./video-gen/static/"
+PHOTO_FOLDER = "./photodatabase/"
 
 
 def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
@@ -37,7 +42,7 @@ def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
 
 
 class YouAreSoOverlay:
-    text = cv2.imread("./static/you_are_so.png", cv2.IMREAD_UNCHANGED)
+    text = cv2.imread(f"{STATIC_FOLDER}/you_are_so.png", cv2.IMREAD_UNCHANGED)
 
     x_align = 50
     y_align = 600
@@ -48,7 +53,7 @@ class YouAreSoOverlay:
 
 
 class PreciousOverlay:
-    text = cv2.imread("./static/precious.png", cv2.IMREAD_UNCHANGED)
+    text = cv2.imread(f"{STATIC_FOLDER}/precious.png", cv2.IMREAD_UNCHANGED)
 
     x_align = 75
     y_align = 600
@@ -59,7 +64,7 @@ class PreciousOverlay:
 
 
 class WhenYouOverlay:
-    text = cv2.imread("./static/when_you.png", cv2.IMREAD_UNCHANGED)
+    text = cv2.imread(f"{STATIC_FOLDER}/when_you.png", cv2.IMREAD_UNCHANGED)
 
     x_align = 75
     y_align = 600
@@ -70,7 +75,7 @@ class WhenYouOverlay:
 
 
 class SmileOverlay:
-    text = cv2.imread("./static/overlay_smile.png", cv2.IMREAD_UNCHANGED)
+    text = cv2.imread(f"{STATIC_FOLDER}/overlay_smile.png", cv2.IMREAD_UNCHANGED)
 
     x_align = 0
     y_align = 0
@@ -164,36 +169,42 @@ class PreciousSmileGenerator:
         ColorFilter.no_modification,
         ColorFilter.no_modification,
         ColorFilter.no_modification,
-        ColorFilter.brighten,
+        ColorFilter.make_pink,
         ColorFilter.make_pink,
     ]
     files: List[str] = []
+    loaded_files = []
     folder: str = ""
 
-    def load_pictures(self, path: str):
-        self.folder = path
-        contents = os.listdir(path)
-        contents.sort()
-        for img_file in contents:
+    def load_pictures(self, paths: List[str]):
+        for img_file in paths:
             if img_file.endswith((".jpg", ".jpeg", ".png")):
                 print("reading: ", img_file)
-                self.files.append(os.path.join(path, img_file))
-                print(cv2.imread(os.path.join(path, img_file)).shape)
+                self.files.append(img_file)
+
+                img = cv2.imread(img_file)
+                h, w, _ = img.shape
+                print(h, w, min(h, w))
+                crop = img[0 : min(h, w), 0 : min(h, w)]
+                print(crop.shape)
+                crop = cv2.resize(crop, (800, 800))
+                print(crop.shape)
+
+                self.loaded_files.append(crop)
 
     def render(self, video_filename: str):
         print(self.files)
-        first_image = cv2.imread(self.files[0])
+        first_image = self.loaded_files[0]
         h, w, _ = first_image.shape
 
         renderer = Renderer.create(video_filename, h, w)
 
-        for i, img in enumerate(self.files):
-            loaded_img = cv2.imread(img)
+        for i, loaded_img in enumerate(self.loaded_files):
             self.image_manipulations[i](loaded_img)
             loaded_img = self.color_enhancements[i](loaded_img)
-            renderer.stand_still(loaded_img, frames=140)
+            renderer.stand_still(loaded_img, 120)
             if i <= len(self.files) - 2:
-                Transition.generate(loaded_img, cv2.imread(self.files[i + 1]), renderer, 10, self.transitions[i])
+                Transition.generate(loaded_img, self.loaded_files[i + 1], renderer, 10, self.transitions[i])
 
         renderer.release
 
@@ -202,10 +213,11 @@ class PreciousSmileGenerator:
         subprocess.run(
             [
                 "ffmpeg",
+                "-y",
                 "-i",
                 video_filename,
                 "-i",
-                "static/smile.wav",
+                "video-gen/static/smile.wav",
                 "-map",
                 "0:0",
                 "-map",
@@ -217,7 +229,102 @@ class PreciousSmileGenerator:
         )
 
 
-vid_gen = PreciousSmileGenerator()
-vid_gen.load_pictures("./pictures")
-vid_gen.render("out.mp4")
-vid_gen.add_audio_track("out.mp4", "with_audio.mp4")
+class PictureSelector:
+    pictures = {}
+
+    def __init__(self, meta_data) -> "PictureSelector":
+        self.pictures = meta_data
+
+    @staticmethod
+    def calculate_happiness_metric(meta_data) -> float:
+        return (
+            meta_data["emotion"][meta_data["dominant_emotion"]] * 3
+            + meta_data["emotion"]["happy"] * 2
+            - meta_data["emotion"]["sad"]
+            - meta_data["emotion"]["angry"]
+            - meta_data["emotion"]["neutral"]
+        )
+
+    def select(self, num=5):
+        ratings = [PictureSelector.calculate_happiness_metric(x) for x in self.pictures]
+        selection = []
+
+        sorted_list = [x for _, x in sorted(zip(ratings, self.pictures))]
+
+        for i in range(num):
+            index: int = int((len(self.pictures) / (num + 1)) * i)
+            print("Rating:", ratings[index], "Index:", index)
+            selected = sorted_list[index]
+            selected["rating"] = PictureSelector.calculate_happiness_metric(selected)
+            selection.append(selected)
+        self.pictures = selection
+        return selection
+
+    def load_pictures(self):
+        for pic in self.pictures:
+            self.files.append(pic["path"])
+
+
+class VideoGenerator:
+    meta_data = {}
+
+    def _load_meta_data(self, name: str):
+        with open(f"{PHOTO_FOLDER}/{name}/meta.json") as f:
+            self.meta_data[name] = json.loads(f.read())
+
+    @staticmethod
+    def insertion_sort(selected, extra):
+        for e in extra:
+            rating = PictureSelector.calculate_happiness_metric(e)
+            inserted: bool = False
+
+            for i, s in enumerate(selected):
+                if s["rating"] >= rating:
+                    selected.insert(i, e)
+                    inserted: bool = True
+                    break
+
+            if not inserted:
+                selected.append(e)
+
+        return selected
+
+    def precious_smile_for(self, name: str, extra, out_file: str):
+        if name not in self.meta_data:
+            self._load_meta_data(name)
+
+        picture_selector = PictureSelector(self.meta_data[name])
+        selected = picture_selector.select(num=5 - min(len(extra), 5))
+        selected_and_extra = VideoGenerator.insertion_sort(selected, extra)
+        paths = [value["path"] for value in selected_and_extra]
+
+        print(paths)
+
+        vid_gen = PreciousSmileGenerator()
+        vid_gen.load_pictures(paths)
+        vid_gen.render("/tmp/temp.mp4")
+        vid_gen.add_audio_track("/tmp/temp.mp4", out_file)
+
+
+video_generator = VideoGenerator()
+video_generator.precious_smile_for(
+    "Karmanyaah",
+    [
+        {
+            "emotion": {
+                "angry": 3.577738496661068e-06,
+                "disgust": 7.95996562674417e-10,
+                "fear": 0.6826502212226523,
+                "happy": 1000.003607538234449408,
+                "sad": 10.322486479430586,
+                "surprise": 6.189664705563807e-08,
+                "neutral": 88.99125391192757,
+            },
+            "dominant_emotion": "happy",
+            "region": {"x": 67, "y": 26, "w": 228, "h": 228, "left_eye": [147, 125], "right_eye": [146, 120]},
+            "face_confidence": 0.98,
+            "path": "./photodatabase/Tassilo/1.png",
+        }
+    ],
+    "with_audio.mp4",
+)
