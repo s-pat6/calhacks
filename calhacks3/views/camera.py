@@ -4,6 +4,8 @@ from PIL import Image
 from ..voice.main import generate_and_speak
 from .flower import display_first_item, FlowerState
 from .loveletter import love_letter_selector
+from .printphotos import display_first_item_3d
+
 #class ImageState(rx.State):
 #    url: str = "https://github.com/reflex-dev"
 #    profile_image: str = (
@@ -272,14 +274,7 @@ def dynamic_text():
                 display_first_item(),
                 rx.cond(
                     ButtonState.current_step % 5 == 4,
-                    rx.text(
-                        "3D Print",  # Change the text to "3D Print"
-                        font_family="Rubik Bubbles", 
-                        font_size="36px", 
-                        font_weight="thin",  
-                        color="#FFFFFF",
-                        text_align="left"
-                    ),
+                    display_first_item_3d(),
                     rx.cond(
                         ButtonState.current_step % 5 == 0,
                         rx.box(
