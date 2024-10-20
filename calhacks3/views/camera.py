@@ -58,24 +58,42 @@ def camera_feed():
         border="15px solid #ff006c",  # Set border with color and width for the frame
     )
 
-gaslight_text = ''
-poem_text = ''
-
 # State to keep track of the current step
 class ButtonState(rx.State):
+    gaslight_text = ''
+    poem_text = ''
     current_step: int = 0  # Initially set to 0
 
     # Method to go to the next step
-    def next_button(self):
+    async def next_button(self):
         self.current_step = (self.current_step + 1) % 5  # Loop through 5 steps
-        if (self.current_step % 5 == 1):
-            global gaslight_text
-            gaslight_text = generate_and_speak('gaslight.wav', 'The user\'s significant other is agitated and annoyed at the user.', 'You are guiding the user in how to de-escalate the situation to come to an understanding an a comically bombastic manner. Provide ways for the user to minimize the other person\'s emotions and stall for a resolution.', 100)
-        if (self.current_step % 5 == 2):
-            global poem_text
-            poem_text = generate_and_speak('poem.wav', "Create a 4 line poem that rhymes and gives random and funny complements to the significant other.", "You forgot the anniversary of you and your significant other so now you are writing a poem in their honor to make up for it. Be satirical and bombastic.", 60, 'To show how much I love and appreciate you, I wrote you a poem.')
-        if (self.current_step % 5 == 3):
-            generate_and_speak('flowers.wav', 'flower rec', 'tone', 50)
+        
+        if self.current_step % 5 == 1:
+            # Generate gaslight text asynchronously and update state
+            self.gaslight_text = generate_and_speak(
+                'gaslight.wav', 
+                "The user's significant other is agitated and annoyed at the user. Provide no more than 50 words of advice.", 
+                "You are guiding the user in how to resolve the situation to come to an understanding. Use comedy and drama to loosen the air.", 
+                60
+            )
+        
+        elif self.current_step % 5 == 2:
+            # Generate poem text asynchronously and update state
+            self.poem_text = generate_and_speak(
+                'poem.wav', 
+                "Create a 4-line poem that rhymes and gives random and funny compliments to the significant other.", 
+                "You forgot the anniversary of you and your significant other so now you are writing a poem in their honor to make up for it. Be satirical and bombastic.", 
+                50
+            )
+        
+        elif self.current_step % 5 == 3:
+            # Generate flower recommendation asynchronously
+            generate_and_speak(
+                'flowers.wav', 
+                'Recommend me a type of flower and briefly describe why in no more than 20 words.', 
+                'Be concise, yet warm and considerate.', 
+                30
+            )
 
 # Function to display the safety measure deployment interface
 def deploy_safety_measures() -> rx.Component:
@@ -251,19 +269,19 @@ def dynamic_text():
     return rx.cond(
         ButtonState.current_step % 5 == 1,
         rx.text(
-            f"{gaslight_text}",
-            font_family = "Rubik Bubbles",
-            font_color = "#ffffff",
-            font_size = "36px",
+            "\"" + f"{ButtonState.gaslight_text}" + "\"",  # Use reactive state variable
+            font_family="Rubik Bubbles",
+            font_color="#ffffff",
+            font_size="36px",
             text_align="left"
         ),
         rx.cond(
             ButtonState.current_step % 5 == 2,
             rx.text(
-                love_letter_selector(),  # Change the text to "Love Letter!"
-                font_family="Rubik Bubbles", 
-                font_size="36px", 
-                font_weight="thin",  
+                love_letter_selector(ButtonState.poem_text),  # Use reactive state variable
+                font_family="Rubik Bubbles",
+                font_size="36px",
+                font_weight="thin",
                 color="#FFFFFF",
                 text_align="left"
             ),

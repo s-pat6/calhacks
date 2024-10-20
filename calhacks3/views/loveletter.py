@@ -49,18 +49,25 @@ def selector_component():
 
 
 # Display the selected option
-def selected_display():
+def selected_display(txt=''):
     return rx.text(
         rx.cond(
-            SelectorState.selected_option == 2,
-            rx.text("Just exploring huh. Maybe you're not the thoughtful type afterall", 
+            SelectorState.selected_option == 1,
+            rx.text("\""+txt+"\"",
                     font_family = "Rubik Bubbles", 
                     font_color = "#ffffff",
-                    font_size = "36px"),  # Ensure the argument is wrapped in rx.text
+                    font_size = "36px"),
             rx.cond(
-                SelectorState.selected_option == 3, 
-                rx.text("here"),
-                rx.text(f"Selected: Option {SelectorState.selected_option}")  # Wrap the output in rx.text
+                SelectorState.selected_option == 2,
+                rx.text("Just exploring huh. Maybe you're not the thoughtful type afterall", 
+                        font_family = "Rubik Bubbles", 
+                        font_color = "#ffffff",
+                        font_size = "36px"),  # Ensure the argument is wrapped in rx.text
+                rx.cond(
+                    SelectorState.selected_option == 3, 
+                    rx.text("here"),
+                    rx.text(f"Selected: Option {SelectorState.selected_option}")  # Wrap the output in rx.text
+                ),
             ),
         ),
         font_size="18px",
@@ -68,10 +75,10 @@ def selected_display():
     )
 
 # The main app component
-def love_letter_selector():
+def love_letter_selector(txt=''):
     return rx.vstack(
         selector_component(),  # Add the 3-way selector
-        selected_display(),    # Add the display for the selected option
+        selected_display(txt),    # Add the display for the selected option
         spacing="20px"
     )
 
