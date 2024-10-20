@@ -2,6 +2,7 @@ import os
 import cv2
 import numpy as np
 from typing import List
+import subprocess
 
 
 def add_transparent_image(background, foreground, x_offset=None, y_offset=None):
@@ -79,6 +80,76 @@ class SmileOverlay:
         add_transparent_image(background, SmileOverlay.text, SmileOverlay.x_align, SmileOverlay.y_align)
 
 
+class Renderer:
+
+    out_file = "out.mp4"
+    codec = None
+    vid_writer = None
+
+    def create(out_file, h, w):
+        renderer = Renderer()
+        renderer.out_file = out_file
+        renderer.codec = cv2.VideoWriter_fourcc(*"mp4v")
+        renderer.vid_writer = cv2.VideoWriter(out_file, renderer.codec, 80, (w, h))
+        return renderer
+
+    def stand_still(self, img, frames=40):
+        for _ in range(frames):
+            self.vid_writer.write(img)
+
+    def release(self):
+        self.vid_writer.release()
+
+
+class Transition:
+    @staticmethod
+    def calculate_coordinates(i, step_size, direction, h, w):
+        if direction == 0:
+            return (i * step_size, h), (0, 0)
+        if direction == 1:
+            return (h, i * step_size), (0, 0)
+        if direction == 2:
+            return (h, w - i * step_size), (0, w)
+        if direction == 3:
+            return (0, i * step_size), (h, 0)
+
+    @staticmethod
+    def generate(current_img, next_img, renderer, frames, direction):
+        h, w, _ = current_img.shape
+        step_size = int(w / frames)
+        for i in range(frames - 1):
+            i = i + 1
+            shapes = np.zeros_like(current_img, np.uint8)
+            x, y = Transition.calculate_coordinates(i, step_size, direction, h, w)
+            cv2.rectangle(shapes, x, y, (255, 255, 255), cv2.FILLED)
+            alpha_mask = shapes / 255.0
+
+            composite = current_img * (1 - alpha_mask) + next_img * alpha_mask
+
+            current_img[0:h, 0:w] = composite
+
+            renderer.stand_still(current_img, 1)
+
+
+class ColorFilter:
+    @staticmethod
+    def brighten(image):
+        maxIntensity = 255.0  # depends on dtype of image data
+
+        image = cv2.multiply(image, 1.2)
+        return image
+
+    @staticmethod
+    def make_pink(image):
+        image = ColorFilter.brighten(image)
+        image = np.uint8(cv2.add(image, (50, 0, 50)))
+        return image
+
+    @staticmethod
+    def no_modification(image):
+        return image
+
+
 class PreciousSmileGenerator:
 
     image_manipulations = [
@@ -87,6 +158,14 @@ class PreciousSmileGenerator:
         WhenYouOverlay.generate,
         SmileOverlay.generate,
         SmileOverlay.generate,
+    ]
+    transitions = [0, 1, 2, 3, 0]
+    color_enhancements = [
+        ColorFilter.no_modification,
+        ColorFilter.no_modification,
+        ColorFilter.no_modification,
+        ColorFilter.brighten,
+        ColorFilter.make_pink,
     ]
     files: List[str] = []
     folder: str = ""
@@ -106,17 +185,39 @@ class PreciousSmileGenerator:
         first_image = cv2.imread(self.files[0])
         h, w, _ = first_image.shape
 
-        codec = cv2.VideoWriter_fourcc(*"mp4v")
-        vid_writer = cv2.VideoWriter(video_filename, codec, 30, (w, h))
+        renderer = Renderer.create(video_filename, h, w)
 
         for i, img in enumerate(self.files):
             loaded_img = cv2.imread(img)
             self.image_manipulations[i](loaded_img)
-            for _ in range(40):
-                vid_writer.write(loaded_img)
-        vid_writer.release()
+            loaded_img = self.color_enhancements[i](loaded_img)
+            renderer.stand_still(loaded_img, frames=140)
+            if i <= len(self.files) - 2:
+                Transition.generate(loaded_img, cv2.imread(self.files[i + 1]), renderer, 10, self.transitions[i])
+
+        renderer.release
+
+    def add_audio_track(self, video_filename: str, out_file: str):
+        # ffmpeg -i <sourceVideoFile> -i <sourceAudioFile> -map 0:0 -map 1:0 -c:v copy -c:a copy <outputVideoFile>
+        subprocess.run(
+            [
+                "ffmpeg",
+                "-i",
+                video_filename,
+                "-i",
+                "static/smile.wav",
+                "-map",
+                "0:0",
+                "-map",
+                "1:0",
+                "-c:v",
+                "copy",
+                out_file,
+            ]
+        )
 
 
 vid_gen = PreciousSmileGenerator()
 vid_gen.load_pictures("./pictures")
 vid_gen.render("out.mp4")
+vid_gen.add_audio_track("out.mp4", "with_audio.mp4")
