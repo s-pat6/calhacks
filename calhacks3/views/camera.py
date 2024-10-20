@@ -67,6 +67,9 @@ class ButtonState(rx.State):
 
     # Method to go to the next step
     def next_button(self):
+        if (self.current_step == 4):
+            from ..face_recog import frozen
+            frozen[0] = False
         self.current_step = (self.current_step + 1) % 5  # Loop through 5 steps
         if (self.current_step % 5 == 1):
             global gaslight_text
@@ -76,6 +79,7 @@ class ButtonState(rx.State):
             poem_text = generate_and_speak('poem.wav', "Create a 4 line poem that rhymes and gives random and funny complements to the significant other.", "You forgot the anniversary of you and your significant other so now you are writing a poem in their honor to make up for it. Be satirical and bombastic.", 60, 'To show how much I love and appreciate you, I wrote you a poem.')
         if (self.current_step % 5 == 3):
             generate_and_speak('flowers.wav', 'flower rec', 'tone', 50)
+
 
 # Function to display the safety measure deployment interface
 def deploy_safety_measures() -> rx.Component:

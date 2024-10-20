@@ -39,12 +39,12 @@ db_path = './photodatabase'
 detector_backend="opencv"
 distance_metric="cosine"
 source=0
-time_threshold=2
+time_threshold=1
 frame_threshold=4
 anti_spoofing: bool = False
 IDENTIFIED_IMG_SIZE = 112
 
-frozen = False
+frozen = [False]
 
 emote = False
 emotes = 0
@@ -62,7 +62,7 @@ def publish_detection(img, faces_in_image):
         for name, faceattrs in faces_in_image.items():
             print(faceattrs)
             if (faceattrs["dominant_emotion"] != 'neutral' and faceattrs["dominant_emotion"] != 'happy' and faceattrs["emotion"][faceattrs["dominant_emotion"]] > 20):
-                frozen = True
+                frozen[0] = True
                 if (emote == False and emotes > 1):
                     generate_and_speak('emotion.wav', 'Inform the user that the other person is ' + faceattrs['dominant_emotion'])
                     emote = True
@@ -277,7 +277,7 @@ async def stuff():
         #print(frozen)
         await asyncio.sleep(0.01)
 
-        if frozen:
+        if frozen[0]:
             continue
 
         has_frame, img = cap.read()
