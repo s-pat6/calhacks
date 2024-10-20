@@ -41,6 +41,9 @@ async def camera_task():
 
 speak()
 
+
+
+
 def index() -> rx.Component:
     return rx.vstack(
         navbar(),
@@ -48,6 +51,7 @@ def index() -> rx.Component:
         countdown_clock(100),
         
         deploy_safety_measures(),
+       
         # rx.flex(
         #     rx.box(main_table(), width=["100%", "100%", "100%", "60%"]),
         #     # email_gen_ui(),
