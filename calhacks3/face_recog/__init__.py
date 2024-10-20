@@ -2,12 +2,12 @@
 import asyncio
 from typing import Dict, List, Optional, Tuple
 import cv2
-from os import getenv
+from os import getenv,getcwd
 
 print(cv2.__file__)
-cv2.__file__ = getenv("OPENCV_DATA_PATH", None)
+cv2.__file__ = getcwd() + "/haarcascades/"
 print(cv2.__file__)
-
+git
 
 import numpy as np
 
