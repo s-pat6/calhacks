@@ -5,37 +5,10 @@ from .views.email import email_gen_ui
 from .views.table import main_table
 from .views.camera import camera_feed, layout_with_video_and_another_component
 from .views.deploysafetymeasures import deploy_safety_measures
+from .views.timer import countdown_clock
 from .backend.backend import State
 
 
-## Function to capture the camera feed using OpenCV
-#async def stream_camera():
-#    cap = cv2.VideoCapture(0)  # Start capturing video from the first camera
-#
-#    while cap.isOpened():
-#        ret, frame = cap.read()
-#        if ret:
-#            # Encode the frame as a JPEG
-#            _, buffer = cv2.imencode('.jpg', frame)
-#            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-#
-#            # Send the image over a WebSocket
-#            await rx.send('camera_feed', jpg_as_text)
-#
-#        await asyncio.sleep(0.03)  # Add a small delay to avoid sending too many frames
-#
-#    cap.release()
-#
-## Start the camera stream on a separate thread
-##rx.create_background_task(stream_camera)
-#
-## WebSocket route to handle streaming
-#@rx.route('/camera_feed', type='websocket')
-#async def camera_feed(websocket):
-#    await websocket.accept()
-#    while True:
-#        image = await rx.receive('camera_feed')
-#        await websocket.send_text(image)
 
 async def camera_task():
     from .face_recog import stuff
@@ -52,6 +25,8 @@ def index() -> rx.Component:
     return rx.vstack(
         navbar(),
         layout_with_video_and_another_component(),
+        countdown_clock(100),
+        
         deploy_safety_measures(),
         # rx.flex(
         #     rx.box(main_table(), width=["100%", "100%", "100%", "60%"]),
