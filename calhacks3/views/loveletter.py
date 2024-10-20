@@ -53,7 +53,7 @@ def selected_display(txt=''):
     return rx.text(
         rx.cond(
             SelectorState.selected_option == 1,
-            rx.text("\""+txt+"\"",
+            rx.text('"', txt,'"',
                     font_family = "Rubik Bubbles", 
                     font_color = "#ffffff",
                     font_size = "36px"),

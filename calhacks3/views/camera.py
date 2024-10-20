@@ -66,8 +66,8 @@ class ButtonState(rx.State):
     poem_text = ''
     current_step: int = 0  # Initially set to 0
 
-    def gaslight_q(self, prompt):
-        self.gaslight_text = generate_and_speak(
+    async def gaslight_q(self, prompt):
+        self.gaslight_text = await generate_and_speak(
             'gaslight.wav', 
             "The user's significant other is agitated and annoyed at the user. Say a short and funny random quip" + (" about " + prompt['input']) if prompt['input'] != '' else '' + " in less than 10 words to distract from the drama.", 
             "You are guiding the user in how to resolve the situation to come to an understanding. Use comedy and drama to loosen the air.", 
@@ -77,32 +77,37 @@ class ButtonState(rx.State):
     # Method to go to the next step
     async def next_button(self):
         if (self.current_step == 4):
+            self.current_step = 0
             from ..face_recog import frozen
             frozen[0] = False
-        self.current_step = (self.current_step + 1) % 5  # Loop through 5 steps
         
-        if self.current_step % 5 == 1:
-            # Generate gaslight text asynchronously and update state
-            self.gaslight_q({'input':''})
-            
-        
-        elif self.current_step % 5 == 2:
-            # Generate poem text asynchronously and update state
-            self.poem_text = generate_and_speak(
+        if self.current_step == 1:
+            self.current_step = 2
+            self.poem_text = await generate_and_speak(
                 'poem.wav', 
                 "Create a 4-line poem that rhymes and gives random and funny compliments to the significant other.", 
                 "You forgot the anniversary of you and your significant other so now you are writing a poem in their honor to make up for it. Be satirical and bombastic.", 
-                50
+                50,
+                block=True,
             )
         
-        elif self.current_step % 5 == 3:
+        elif self.current_step == 2:
+            self.current_step = 3
+            #generate_and_speak(
+            #    'flowers.wav', 
+            #    'Recommend me a type of flower and briefly describe why in no more than 20 words.', 
+            #    'Be concise, yet warm and considerate.', 
+            #    30
+            #)
+        
+        elif self.current_step == 3:
+            self.current_step = 4
             # Generate flower recommendation asynchronously
-            generate_and_speak(
-                'flowers.wav', 
-                'Recommend me a type of flower and briefly describe why in no more than 20 words.', 
-                'Be concise, yet warm and considerate.', 
-                30
-            )
+            
+        elif self.current_step == 0:
+            self.current_step = 1
+            await self.gaslight_q({'input':''})
+        
 
 # Function to display the safety measure deployment interface
 def deploy_safety_measures() -> rx.Component:
@@ -120,7 +125,7 @@ def deploy_safety_measures() -> rx.Component:
         rx.flex(
             # First button
             rx.cond(
-                ButtonState.current_step % 5 == 0,  # Conditionally render based on step
+                ButtonState.current_step == 0,  # Conditionally render based on step
                 rx.button(
                     "Gaslight!",
                     on_click=ButtonState.next_button,  # Clickable only if it's the current step
@@ -149,7 +154,7 @@ def deploy_safety_measures() -> rx.Component:
 
             # Second button
             rx.cond(
-                ButtonState.current_step % 5 == 1,  # Conditionally render based on step
+                ButtonState.current_step == 1,  # Conditionally render based on step
                 rx.button(
                     "Love Letter!",
                     on_click=ButtonState.next_button,  # Clickable only if it's the current step
@@ -178,7 +183,7 @@ def deploy_safety_measures() -> rx.Component:
 
             # Third button
             rx.cond(
-                ButtonState.current_step % 5 == 2,  # Conditionally render based on step
+                ButtonState.current_step == 2,  # Conditionally render based on step
                 rx.button(
                     "Flowers",
                     on_click=ButtonState.next_button,  # Clickable only if it's the current step
@@ -207,7 +212,7 @@ def deploy_safety_measures() -> rx.Component:
 
             # Fourth button
             rx.cond(
-                ButtonState.current_step % 5 == 3,  # Conditionally render based on step
+                ButtonState.current_step == 3,  # Conditionally render based on step
                 rx.button(
                     "3D Print",
                     on_click=ButtonState.next_button,  # Clickable only if it's the current step
@@ -236,7 +241,7 @@ def deploy_safety_measures() -> rx.Component:
 
             # Fifth button
             rx.cond(
-                ButtonState.current_step % 5 == 4,  # Conditionally render based on step
+                ButtonState.current_step == 4,  # Conditionally render based on step
                 rx.button(
                     "Home",
                     on_click=ButtonState.next_button,  # Clickable only if it's the current step
@@ -276,7 +281,7 @@ def deploy_safety_measures() -> rx.Component:
 # Function to dynamically change the text based on the current step
 def dynamic_text():
     return rx.cond(
-        ButtonState.current_step % 5 == 1,
+        ButtonState.current_step == 1,
         rx.box(
             rx.text(
                 "\"" + f"{ButtonState.gaslight_text}" + "\"",  # Use reactive state variable
@@ -302,7 +307,7 @@ def dynamic_text():
         ),
         
         rx.cond(
-            ButtonState.current_step % 5 == 2,
+            ButtonState.current_step == 2,
             rx.text(
                 love_letter_selector(ButtonState.poem_text),  # Use reactive state variable
                 font_family="Rubik Bubbles",
@@ -312,13 +317,13 @@ def dynamic_text():
                 text_align="left"
             ),
             rx.cond(
-                ButtonState.current_step % 5 == 3,
+                ButtonState.current_step == 3,
                 display_first_item(),
                 rx.cond(
-                    ButtonState.current_step % 5 == 4,
+                    ButtonState.current_step == 4,
                     display_first_item_3d(),
                     rx.cond(
-                        ButtonState.current_step % 5 == 0,
+                        ButtonState.current_step == 0,
                         rx.box(
                             rx.text(
                                 "What! I'd never forget your...",  # Default text for "Home"

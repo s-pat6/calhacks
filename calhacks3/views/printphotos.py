@@ -4,22 +4,22 @@ image_data = [
     {
         "name": "HandBag",
         "time": "1 hr 12 min",
-        "link": "../components/images/handbag.webp"
+        "link": "/handbag.jpg"
     },
     {
         "name": "Key Ring",
         "time": "12 min",
-        "link": "../components/images/keyring.webp"
+        "link": "/keyring.jpg"
     },
     {
         "name": "Tealight Holder",
         "time": "3 hr 46 min",
-        "link": "../components/images/tealight holder.webp"
+        "link": "/tealight holder.jpg"
     },
     {
         "name": "Wallet",
         "time": "18.5 min",
-        "link": "../components/images/wallet.webp"
+        "link": "/wallet.jpg"
     }
 ]
 

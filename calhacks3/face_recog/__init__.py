@@ -74,7 +74,7 @@ async def publish_detection(img, faces_in_image):
             if (faceattrs["dominant_emotion"] != 'neutral' and faceattrs["dominant_emotion"] != 'happy' and faceattrs["emotion"][faceattrs["dominant_emotion"]] > 20):
                 frozen[0] = True
                 thread = make_vid(faceattrs, img, name)
-                await generate_and_speak('emotion.wav', 'Inform the user that the other person is ' + faceattrs['dominant_emotion'])
+                await generate_and_speak('emotion.wav', 'Inform the user that the other person is ' + faceattrs['dominant_emotion'], tokens = 20)
                 await thread
             print(name + ": ", faceattrs["emotion"])
             print(str(faceattrs))
@@ -371,7 +371,7 @@ async def stuff():
     cap.release()
     cv2.destroyAllWindows()
 
-    return data
+    #return data
 
 if __name__ == '__main__':
     print(get_emotions("./photodatabase/Karmanyaah/3.png"))

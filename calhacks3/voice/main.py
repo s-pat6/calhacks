@@ -9,7 +9,7 @@ import pyaudio
 import wave
 from play_sounds import play_file_async 
 
-async def speak(txt="Hello and welcome to ForgetMeNot. I'm here to guide you through human emotions.", file='output.wav'):
+async def speak(txt="Hello and welcome to ForgetMeNot. I'm here to guide you through human emotions.", file='output.wav', block=True):
     SPEAK_OPTIONS = {'text': txt}
     filename = file
 
@@ -27,7 +27,7 @@ async def speak(txt="Hello and welcome to ForgetMeNot. I'm here to guide you thr
         # STEP 3: Call the save method on the speak property
         response = deepgram.speak.v("1").save(filename, SPEAK_OPTIONS, options)
         chunk = 1024 * 16
-        await play_file_async('./' + filename)
+        await play_file_async('./' + filename, block=block)
 
         #f = wave.open(r'./'+filename, 'rb')
         #p = pyaudio.PyAudio()
@@ -75,12 +75,12 @@ def generate(content='Reaffirm the user', system='You are a voice assistant for 
 
     return chat_completion.choices[0].message.content
 
-async def generate_and_speak(file='output.wav', content='Reaffirm the user', system='You are a voice assistant for an app called ForgetMeNot. You are assisting a user who forgot it was their anniversary with their significant other. Based on the emotions of the significant other, provide a course of action for the user to first identify how the other person is feeling, then make up for forgetting by presenting gifts.', tokens=30, assistant=''):
+async def generate_and_speak(file='output.wav', content='Reaffirm the user', system='You are a voice assistant for an app called ForgetMeNot. You are assisting a user who forgot it was their anniversary with their significant other. Based on the emotions of the significant other, provide a course of action for the user to first identify how the other person is feeling, then make up for forgetting by presenting gifts.', tokens=30, assistant='', block = True):
     print('context: ' + system)
     print('content: ' + content)
     text = generate(content, system, tokens, assistant)
     print('text: ' + text)
-    await speak(text, file)
+    await speak(text, file, block)
     return text
 
 
