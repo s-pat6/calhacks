@@ -30,4 +30,3 @@ tests/*.csv
 tests/*.ipynb
 tests/dataset/*.pkl
 venv
-meta.json
