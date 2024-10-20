@@ -8,7 +8,10 @@ from .views.camera import camera_feed, layout_with_video_and_another_component, 
 from .views.timer import countdown_clock
 from .backend.backend import State
 
+from .voice.main import generate_and_speak, speak
 
+from .face_recog import publish_detection
+from .face_recog import latestimg
 
 async def camera_task():
     from .face_recog import stuff
@@ -18,8 +21,7 @@ async def camera_task():
         print('camera task ended')
         return
 
-
-
+speak()
 
 def index() -> rx.Component:
     return rx.vstack(

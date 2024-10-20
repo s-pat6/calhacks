@@ -3,6 +3,7 @@ import asyncio
 from typing import Dict, List, Optional, Tuple
 import cv2
 from os import getenv,getcwd
+from ..voice.main import generate_and_speak
 
 print(cv2.__file__)
 cv2.__file__ = getcwd() + "/haarcascades/"
@@ -43,8 +44,11 @@ frame_threshold=4
 anti_spoofing: bool = False
 IDENTIFIED_IMG_SIZE = 112
 
+emote = False
+emotes = 0
+
 def publish_detection(img, faces_in_image):
-    global latestimg
+    global latestimg, emote, emotes
     #print("Found:")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     latestimg[0] = Image.fromarray(img)
@@ -52,8 +56,14 @@ def publish_detection(img, faces_in_image):
     #print('set an mi', latestimg == None)
     if (faces_in_image):
         for name, faceattrs in faces_in_image.items():
+            if (faceattrs["dominant_emotion"] != ['neutral'] and faceattrs["dominant_emotion"] != ['happy'] and faceattrs["emotion"][faceattrs["dominant_emotion"]] > 20):
+                if (emote == False and emotes > 1):
+                    generate_and_speak('emotion.wav', 'Inform the user that the other person is ' + faceattrs['dominant_emotion'])
+                    emote = True
+                else:
+                    emotes += 1
             print(name + ": ", faceattrs["emotion"])
-            print(faceattrs)
+            print(str(faceattrs))
 
 def search_identity(
     detected_face: np.ndarray,
@@ -338,6 +348,8 @@ async def stuff():
     # kill open cv things
     cap.release()
     cv2.destroyAllWindows()
+
+    return data
 
 if __name__ == '__main__':
     print(get_emotions("./photodatabase/Karmanyaah/3.png"))
