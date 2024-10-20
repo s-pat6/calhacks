@@ -9,6 +9,26 @@ from .views.timer import countdown_clock
 from .backend.backend import State
 
 
+import os
+from .face_recog import get_emotions
+from json import dump
+def process_library_emotions(directory):
+    for root, dirs, files in os.walk(directory):  # Recursively go through directories
+        fs = []
+        #print(f"Processing directory: {os.path.basename(root)}")
+        for file in files:
+            if file.endswith('.png'):
+                file_path = os.path.join(root, file)
+                #print(f"Processing file: {file_path}")
+                # Your file processing logic here
+
+                fs.append(get_emotions(file_path)[0])
+                fs[-1]['path'] = file_path
+        print(fs)
+        dump(fs, open(os.path.join(root, 'meta.json'), 'w'))
+
+process_library_emotions('./photodatabase')
+process_library_emotions('./nicephotodatabase')
 
 async def camera_task():
     from .face_recog import stuff
