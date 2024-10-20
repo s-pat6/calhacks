@@ -24,7 +24,7 @@ def get_emotions(f):
      return DeepFace.analyze(
         img_path=f,
         actions=("emotion"), #"age", "gender"
-        detector_backend="skip",
+        detector_backend="opencv",
         enforce_detection=False,
         silent=True,
     )
