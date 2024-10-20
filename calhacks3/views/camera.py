@@ -66,6 +66,9 @@ class ButtonState(rx.State):
 
     # Method to go to the next step
     async def next_button(self):
+        if (self.current_step == 4):
+            from ..face_recog import frozen
+            frozen[0] = False
         self.current_step = (self.current_step + 1) % 5  # Loop through 5 steps
         
         if self.current_step % 5 == 1:

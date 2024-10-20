@@ -33,9 +33,9 @@
           shellHook = ''
             echo "Welcome to your non-FHS development shell!"
             export OPENCV_DATA_PATH="${pkgs.opencv}/share/opencv4/haarcascades/data/"
-            mkdir -p haarcascades
-            ln -sf ${pkgs.opencv}/share/opencv4/haarcascades/ haarcascades/data
-            export OPENCV_DATA_PATH="`pwd`/haarcascades/data"
+            #mkdir -p haarcascades
+            #ln -sf ${pkgs.opencv}/share/opencv4/haarcascades/ haarcascades/data
+            #export OPENCV_DATA_PATH="`pwd`/haarcascades/data"
           '';
         };
       };

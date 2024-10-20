@@ -39,24 +39,30 @@ db_path = './photodatabase'
 detector_backend="opencv"
 distance_metric="cosine"
 source=0
-time_threshold=2
+time_threshold=1
 frame_threshold=4
 anti_spoofing: bool = False
 IDENTIFIED_IMG_SIZE = 112
+
+frozen = [False]
 
 emote = False
 emotes = 0
 
 def publish_detection(img, faces_in_image):
-    global latestimg, emote, emotes
+    global latestimg, emote, emotes, frozen
     #print("Found:")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     latestimg[0] = Image.fromarray(img)
     #latestimg[0] = 'a'
     #print('set an mi', latestimg == None)
-    if (faces_in_image):
+    if faces_in_image is not None:
+        # frozen = True
+        print(faces_in_image)
         for name, faceattrs in faces_in_image.items():
-            if (faceattrs["dominant_emotion"] != ['neutral'] and faceattrs["dominant_emotion"] != ['happy'] and faceattrs["emotion"][faceattrs["dominant_emotion"]] > 20):
+            print(faceattrs)
+            if (faceattrs["dominant_emotion"] != 'neutral' and faceattrs["dominant_emotion"] != 'happy' and faceattrs["emotion"][faceattrs["dominant_emotion"]] > 20):
+                frozen[0] = True
                 if (emote == False and emotes > 1):
                     generate_and_speak('emotion.wav', 'Inform the user that the other person is ' + faceattrs['dominant_emotion'])
                     emote = True
@@ -245,6 +251,7 @@ def build_demography_models(enable_face_analysis: bool) -> None:
     DeepFace.build_model(task="facial_attribute", model_name="Emotion")
     logger.info("Emotion model is just built")
 async def stuff():
+    global frozen
     # initialize models
     build_demography_models(enable_face_analysis=True)
     ds.build_facial_recognition_model(model_name=model_name)
@@ -267,8 +274,14 @@ async def stuff():
     print("1")
 
     while True:
+        #print(frozen)
         await asyncio.sleep(0.01)
+
+        if frozen[0]:
+            continue
+
         has_frame, img = cap.read()
+        
         if not has_frame:
             break
 
@@ -277,6 +290,7 @@ async def stuff():
         raw_img = img.copy()
 
         faces_coordinates = []
+
         if freeze is False:
             faces_coordinates = ds.grab_facial_areas(
                 img=img, detector_backend=detector_backend, anti_spoofing=anti_spoofing
