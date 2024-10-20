@@ -64,6 +64,14 @@ class ButtonState(rx.State):
     poem_text = ''
     current_step: int = 0  # Initially set to 0
 
+    def gaslight_q(self, prompt):
+        self.gaslight_text = generate_and_speak(
+            'gaslight.wav', 
+            "The user's significant other is agitated and annoyed at the user. Say a short and funny random quip" + (" about " + prompt['input']) if prompt['input'] != '' else '' + " in less than 10 words to distract from the drama.", 
+            "You are guiding the user in how to resolve the situation to come to an understanding. Use comedy and drama to loosen the air.", 
+            25
+        )
+
     # Method to go to the next step
     async def next_button(self):
         if (self.current_step == 4):
@@ -73,12 +81,8 @@ class ButtonState(rx.State):
         
         if self.current_step % 5 == 1:
             # Generate gaslight text asynchronously and update state
-            self.gaslight_text = generate_and_speak(
-                'gaslight.wav', 
-                "The user's significant other is agitated and annoyed at the user. Provide no more than 50 words of advice.", 
-                "You are guiding the user in how to resolve the situation to come to an understanding. Use comedy and drama to loosen the air.", 
-                60
-            )
+            self.gaslight_q({'input':''})
+            
         
         elif self.current_step % 5 == 2:
             # Generate poem text asynchronously and update state
@@ -271,13 +275,30 @@ def deploy_safety_measures() -> rx.Component:
 def dynamic_text():
     return rx.cond(
         ButtonState.current_step % 5 == 1,
-        rx.text(
-            "\"" + f"{ButtonState.gaslight_text}" + "\"",  # Use reactive state variable
-            font_family="Rubik Bubbles",
-            font_color="#ffffff",
-            font_size="36px",
-            text_align="left"
+        rx.box(
+            rx.text(
+                "\"" + f"{ButtonState.gaslight_text}" + "\"",  # Use reactive state variable
+                font_family="Rubik Bubbles",
+                font_color="#ffffff",
+                font_size="36px",
+                text_align="left"
+            ),
+            rx.divider(),
+            rx.form.root(
+                rx.hstack(
+                    rx.input(
+                        name="input",
+                        placeholder="Say anything...",
+                        type="text",
+                    ),
+                    rx.button("Submit", type="submit"),
+                    width="100%",
+                ),
+                on_submit=ButtonState.gaslight_q,
+                reset_on_submit=True,
+            ),
         ),
+        
         rx.cond(
             ButtonState.current_step % 5 == 2,
             rx.text(
