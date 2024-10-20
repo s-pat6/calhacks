@@ -4,6 +4,8 @@ from typing import Dict, List, Optional, Tuple
 import cv2
 from os import getenv,getcwd
 from ..voice.main import generate_and_speak
+import tempfile
+import os
 
 print(cv2.__file__)
 cv2.__file__ = getcwd() + "/haarcascades/"
@@ -46,10 +48,18 @@ IDENTIFIED_IMG_SIZE = 112
 
 frozen = [False]
 
-emote = False
-emotes = 0
+from .. import video_gen
 
-def publish_detection(img, faces_in_image):
+from threading import Thread
+async def make_vid(faceattrs, img, pers_name):
+    print("STARTING A VIDEO RENDERING THREADDDDDDDDD", time.time())
+    faceattrs["path"] = tempfile.mktemp() + ".png"
+    cv2.imwrite(faceattrs["path"], img)
+    await video_gen.video_generator.precious_smile_for(pers_name, [faceattrs], "./generated_vid.mp4")
+    os.remove(faceattrs["path"])
+    print("ENDING A VIDEO RENDERING THREADDDDDDDDD", time.time())
+
+async def publish_detection(img, faces_in_image):
     global latestimg, emote, emotes, frozen
     #print("Found:")
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -63,11 +73,9 @@ def publish_detection(img, faces_in_image):
             print(faceattrs)
             if (faceattrs["dominant_emotion"] != 'neutral' and faceattrs["dominant_emotion"] != 'happy' and faceattrs["emotion"][faceattrs["dominant_emotion"]] > 20):
                 frozen[0] = True
-                if (emote == False and emotes > 1):
-                    generate_and_speak('emotion.wav', 'Inform the user that the other person is ' + faceattrs['dominant_emotion'])
-                    emote = True
-                else:
-                    emotes += 1
+                thread = make_vid(faceattrs, img, name)
+                await generate_and_speak('emotion.wav', 'Inform the user that the other person is ' + faceattrs['dominant_emotion'])
+                await thread
             print(name + ": ", faceattrs["emotion"])
             print(str(faceattrs))
 
@@ -335,7 +343,7 @@ async def stuff():
                     model_name=model_name,
                 )
 
-                publish_detection(img, faces_in_image)
+                await publish_detection(img, faces_in_image)
 
                 # freeze the img after analysis
                 freezed_img = img.copy()
@@ -353,7 +361,7 @@ async def stuff():
 
         freezed_img = ds.countdown_to_release(img=freezed_img, tic=tic, time_threshold=time_threshold)
 
-        publish_detection(img if freezed_img is None else freezed_img, None)
+        await publish_detection(img if freezed_img is None else freezed_img, None)
         #cv2.imshow("img", img if freezed_img is None else freezed_img)
 
         #if cv2.waitKey(1) & 0xFF == ord("q"):  # press q to quit

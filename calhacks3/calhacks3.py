@@ -25,7 +25,7 @@ def process_library_emotions(directory):
 
                 fs.append(get_emotions(file_path)[0])
                 fs[-1]['path'] = file_path
-        print(fs)
+        #print(fs)
         dump(fs, open(os.path.join(root, 'meta.json'), 'w'))
 
 process_library_emotions('./photodatabase')

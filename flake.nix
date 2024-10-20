@@ -27,6 +27,7 @@
            pyopencv4
             #python311Packages.opencv4
             gcc
+            ffmpeg
           ];
 
           # Optional: set up environment variables or other shell hooks

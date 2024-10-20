@@ -64,9 +64,10 @@ def selected_display(txt=''):
                         font_color = "#ffffff",
                         font_size = "36px"),  # Ensure the argument is wrapped in rx.text
                 rx.cond(
-                    SelectorState.selected_option == 3, 
-                    rx.text("here"),
-                    rx.text(f"Selected: Option {SelectorState.selected_option}")  # Wrap the output in rx.text
+                 
+                SelectorState.selected_option == 3, 
+                rx.vstack(rx.html('<video controls width="500"><source src="http://localhost:4000/generated_vid.mp4" type="video/mp4" /></video>'), 'Generated Video'),
+                rx.text(f"Selected: Option {SelectorState.selected_option}")  # Wrap the output in rx.text
                 ),
             ),
         ),

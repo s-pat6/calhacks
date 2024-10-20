@@ -1,3 +1,4 @@
+import asyncio
 import os
 from deepgram import (
     DeepgramClient,
@@ -6,8 +7,9 @@ from deepgram import (
 from groq import Groq
 import pyaudio
 import wave
+from play_sounds import play_file_async 
 
-def speak(txt="Hello and welcome to ForgetMeNot. I'm here to guide you through human emotions.", file='output.wav'):
+async def speak(txt="Hello and welcome to ForgetMeNot. I'm here to guide you through human emotions.", file='output.wav'):
     SPEAK_OPTIONS = {'text': txt}
     filename = file
 
@@ -24,21 +26,24 @@ def speak(txt="Hello and welcome to ForgetMeNot. I'm here to guide you through h
 
         # STEP 3: Call the save method on the speak property
         response = deepgram.speak.v("1").save(filename, SPEAK_OPTIONS, options)
-        chunk = 1024
-        f = wave.open(r'./'+filename, 'rb')
-        p = pyaudio.PyAudio()
-        stream = p.open(format=p.get_format_from_width(f.getsampwidth()),
-                        channels=f.getnchannels(),
-                        rate=f.getframerate(),
-                        output=True)
-        data = f.readframes(chunk)
-        while data:
-            stream.write(data)
-            data=f.readframes(chunk)
-        stream.stop_stream()
-        stream.close()
-        p.terminate()
-        print(response.to_json(indent=4))
+        chunk = 1024 * 16
+        await play_file_async('./' + filename)
+
+        #f = wave.open(r'./'+filename, 'rb')
+        #p = pyaudio.PyAudio()
+        #stream = p.open(format=p.get_format_from_width(f.getsampwidth()),
+        #                channels=f.getnchannels(),
+        #                rate=f.getframerate(),
+        #                output=True)
+        #data = f.readframes(chunk)
+        #while data:
+        #    stream.write(data)
+        #    data=f.readframes(chunk)
+        #    await asyncio.sleep(0)
+        #stream.stop_stream()
+        #stream.close()
+        #p.terminate()
+        #print(response.to_json(indent=4))
 
     except Exception as e:
         print(f"Exception: {e}")
@@ -70,12 +75,12 @@ def generate(content='Reaffirm the user', system='You are a voice assistant for 
 
     return chat_completion.choices[0].message.content
 
-def generate_and_speak(file='output.wav', content='Reaffirm the user', system='You are a voice assistant for an app called ForgetMeNot. You are assisting a user who forgot it was their anniversary with their significant other. Based on the emotions of the significant other, provide a course of action for the user to first identify how the other person is feeling, then make up for forgetting by presenting gifts.', tokens=30, assistant=''):
+async def generate_and_speak(file='output.wav', content='Reaffirm the user', system='You are a voice assistant for an app called ForgetMeNot. You are assisting a user who forgot it was their anniversary with their significant other. Based on the emotions of the significant other, provide a course of action for the user to first identify how the other person is feeling, then make up for forgetting by presenting gifts.', tokens=30, assistant=''):
     print('context: ' + system)
     print('content: ' + content)
     text = generate(content, system, tokens, assistant)
     print('text: ' + text)
-    speak(text, file)
+    await speak(text, file)
     return text
 
 

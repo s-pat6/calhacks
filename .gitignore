@@ -31,3 +31,5 @@ tests/*.ipynb
 tests/dataset/*.pkl
 venv
 meta.json
+*.mp4
+*.webm

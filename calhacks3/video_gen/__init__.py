@@ -6,7 +6,7 @@ import subprocess
 import json
 
 
-STATIC_FOLDER = "./video-gen/static/"
+STATIC_FOLDER = "./calhacks3/video_gen/static/"
 PHOTO_FOLDER = "./photodatabase/"
 
 
@@ -210,23 +210,28 @@ class PreciousSmileGenerator:
 
     def add_audio_track(self, video_filename: str, out_file: str):
         # ffmpeg -i <sourceVideoFile> -i <sourceAudioFile> -map 0:0 -map 1:0 -c:v copy -c:a copy <outputVideoFile>
-        subprocess.run(
+        out = subprocess.run(
             [
                 "ffmpeg",
                 "-y",
                 "-i",
                 video_filename,
                 "-i",
-                "video-gen/static/smile.wav",
+                f"{STATIC_FOLDER}smile.wav",
                 "-map",
-                "0:0",
+                "0:v",
                 "-map",
-                "1:0",
-                "-c:v",
-                "copy",
+                "1:a",
+            "-c:v", "libx264",  # Encode video with H.264, widely supported by browsers
+            "-c:a", "aac",       # Encode audio with AAC
+                "-movflags",
+                "+faststart",
                 out_file,
-            ]
+            ],
+            capture_output= False, #True
+
         )
+        print("ffmpeg ran", out)
 
 
 class PictureSelector:
@@ -289,7 +294,7 @@ class VideoGenerator:
 
         return selected
 
-    def precious_smile_for(self, name: str, extra, out_file: str):
+    async def precious_smile_for(self, name: str, extra, out_file: str):
         if name not in self.meta_data:
             self._load_meta_data(name)
 
@@ -303,28 +308,32 @@ class VideoGenerator:
         vid_gen = PreciousSmileGenerator()
         vid_gen.load_pictures(paths)
         vid_gen.render("/tmp/temp.mp4")
-        vid_gen.add_audio_track("/tmp/temp.mp4", out_file)
+        vid_gen.add_audio_track("/tmp/temp.mp4", "/tmp/tempaudio.mp4")
+        os.rename("/tmp/tempaudio.mp4", out_file)
+        
 
 
 video_generator = VideoGenerator()
-video_generator.precious_smile_for(
-    "Karmanyaah",
-    [
-        {
-            "emotion": {
-                "angry": 3.577738496661068e-06,
-                "disgust": 7.95996562674417e-10,
-                "fear": 0.6826502212226523,
-                "happy": 1000.003607538234449408,
-                "sad": 10.322486479430586,
-                "surprise": 6.189664705563807e-08,
-                "neutral": 88.99125391192757,
-            },
-            "dominant_emotion": "happy",
-            "region": {"x": 67, "y": 26, "w": 228, "h": 228, "left_eye": [147, 125], "right_eye": [146, 120]},
-            "face_confidence": 0.98,
-            "path": "./photodatabase/Tassilo/1.png",
-        }
-    ],
-    "with_audio.mp4",
-)
+
+if __name__ == "__main__":
+    video_generator.precious_smile_for(
+        "Karmanyaah",
+        [
+            {
+                "emotion": {
+                    "angry": 3.577738496661068e-06,
+                    "disgust": 7.95996562674417e-10,
+                    "fear": 0.6826502212226523,
+                    "happy": 1000.003607538234449408,
+                    "sad": 10.322486479430586,
+                    "surprise": 6.189664705563807e-08,
+                    "neutral": 88.99125391192757,
+                },
+                "dominant_emotion": "happy",
+                "region": {"x": 67, "y": 26, "w": 228, "h": 228, "left_eye": [147, 125], "right_eye": [146, 120]},
+                "face_confidence": 0.98,
+                "path": "./photodatabase/Tassilo/1.png",
+            }
+        ],
+        "with_audio.mp4",
+    )
