@@ -2,10 +2,10 @@
 import asyncio
 from typing import Dict, List, Optional, Tuple
 import cv2
-from os import getenv
+from os import getenv,getcwd
 
 print(cv2.__file__)
-cv2.__file__ = getenv("OPENCV_DATA_PATH", None)
+cv2.__file__ = getcwd() + "/haarcascades/"
 print(cv2.__file__)
 
 
@@ -251,8 +251,11 @@ async def stuff():
     freeze = False
     num_frames_with_faces = 0
     tic = time.time()
+    print("1")
 
     cap = cv2.VideoCapture(source)  # webcam
+    print("1")
+
     while True:
         await asyncio.sleep(0.01)
         has_frame, img = cap.read()
