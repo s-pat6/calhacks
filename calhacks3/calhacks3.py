@@ -1,3 +1,4 @@
+import asyncio
 import reflex as rx
 from .views.navbar import navbar
 from .views.email import email_gen_ui
@@ -7,34 +8,45 @@ from .views.deploysafetymeasures import deploy_safety_measures
 from .backend.backend import State
 
 
-# Function to capture the camera feed using OpenCV
-async def stream_camera():
-    cap = cv2.VideoCapture(0)  # Start capturing video from the first camera
+## Function to capture the camera feed using OpenCV
+#async def stream_camera():
+#    cap = cv2.VideoCapture(0)  # Start capturing video from the first camera
+#
+#    while cap.isOpened():
+#        ret, frame = cap.read()
+#        if ret:
+#            # Encode the frame as a JPEG
+#            _, buffer = cv2.imencode('.jpg', frame)
+#            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+#
+#            # Send the image over a WebSocket
+#            await rx.send('camera_feed', jpg_as_text)
+#
+#        await asyncio.sleep(0.03)  # Add a small delay to avoid sending too many frames
+#
+#    cap.release()
+#
+## Start the camera stream on a separate thread
+##rx.create_background_task(stream_camera)
+#
+## WebSocket route to handle streaming
+#@rx.route('/camera_feed', type='websocket')
+#async def camera_feed(websocket):
+#    await websocket.accept()
+#    while True:
+#        image = await rx.receive('camera_feed')
+#        await websocket.send_text(image)
 
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if ret:
-            # Encode the frame as a JPEG
-            _, buffer = cv2.imencode('.jpg', frame)
-            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+async def camera_task():
+    from .face_recog import stuff
+    try:
+        await stuff()
+    except asyncio.CancelledError:
+        print('camera task ended')
+        return
 
-            # Send the image over a WebSocket
-            await rx.send('camera_feed', jpg_as_text)
 
-        await asyncio.sleep(0.03)  # Add a small delay to avoid sending too many frames
 
-    cap.release()
-
-# Start the camera stream on a separate thread
-#rx.create_background_task(stream_camera)
-
-# WebSocket route to handle streaming
-@rx.route('/camera_feed', type='websocket')
-async def camera_feed(websocket):
-    await websocket.accept()
-    while True:
-        image = await rx.receive('camera_feed')
-        await websocket.send_text(image)
 
 def index() -> rx.Component:
     return rx.vstack(
@@ -88,3 +100,5 @@ app.add_page(
     title="ForgetMeNot",
     description="CalHacks 11.0",
 )
+
+app.register_lifespan_task(camera_task)

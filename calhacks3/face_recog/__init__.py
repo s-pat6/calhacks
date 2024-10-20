@@ -1,4 +1,5 @@
 
+import asyncio
 from typing import Dict, List, Optional, Tuple
 import cv2
 from os import getenv
@@ -16,24 +17,31 @@ import time
 
 from deepface.commons.logger import Logger
 logger = Logger()
+from PIL import Image
 
+latestimg = [None]
 
 model_name = 'VGG-Face'
-db_path = './face-recog/photodatabase'
+db_path = './photodatabase'
 detector_backend="opencv"
 distance_metric="cosine"
 source=0
-time_threshold=5
-frame_threshold=5
+time_threshold=2
+frame_threshold=4
 anti_spoofing: bool = False
 IDENTIFIED_IMG_SIZE = 112
 
 def publish_detection(img, faces_in_image):
-    print("Found:")
-    for name, faceattrs in faces_in_image.items():
-        print(name + ": ", faceattrs["emotion"])
-        print(faceattrs)
-    pass
+    global latestimg
+    #print("Found:")
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    latestimg[0] = Image.fromarray(img)
+    #latestimg[0] = 'a'
+    #print('set an mi', latestimg == None)
+    if (faces_in_image):
+        for name, faceattrs in faces_in_image.items():
+            print(name + ": ", faceattrs["emotion"])
+            print(faceattrs)
 
 def search_identity(
     detected_face: np.ndarray,
@@ -214,7 +222,7 @@ def build_demography_models(enable_face_analysis: bool) -> None:
     logger.info("Gender model is just built")
     DeepFace.build_model(task="facial_attribute", model_name="Emotion")
     logger.info("Emotion model is just built")
-def stuff():
+async def stuff():
     # initialize models
     build_demography_models(enable_face_analysis=True)
     ds.build_facial_recognition_model(model_name=model_name)
@@ -234,6 +242,7 @@ def stuff():
 
     cap = cv2.VideoCapture(source)  # webcam
     while True:
+        await asyncio.sleep(0.01)
         has_frame, img = cap.read()
         if not has_frame:
             break
@@ -305,13 +314,15 @@ def stuff():
 
         freezed_img = ds.countdown_to_release(img=freezed_img, tic=tic, time_threshold=time_threshold)
 
-        cv2.imshow("img", img if freezed_img is None else freezed_img)
+        publish_detection(img if freezed_img is None else freezed_img, None)
+        #cv2.imshow("img", img if freezed_img is None else freezed_img)
 
-        if cv2.waitKey(1) & 0xFF == ord("q"):  # press q to quit
-            break
+        #if cv2.waitKey(1) & 0xFF == ord("q"):  # press q to quit
+        #    break
 
     # kill open cv things
     cap.release()
     cv2.destroyAllWindows()
 
-stuff()
+if __name__ == '__main__':
+    stuff()

@@ -18,6 +18,7 @@
       {
         devShells.${system}.default = pkgs.mkShell {
           buildInputs = with pkgs; [
+            nodejs_20
             python311
             python311Packages.pandas
             python311Packages.numpy
