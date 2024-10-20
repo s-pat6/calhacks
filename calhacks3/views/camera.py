@@ -1,6 +1,7 @@
 import asyncio
 import reflex as rx
 from PIL import Image
+from ..voice.main import generate_and_speak
 from .flower import display_first_item, FlowerState
 from .loveletter import love_letter_selector
 #class ImageState(rx.State):
@@ -57,6 +58,8 @@ def camera_feed():
         border="15px solid #ff006c",  # Set border with color and width for the frame
     )
 
+gaslight_text = ''
+poem_text = ''
 
 # State to keep track of the current step
 class ButtonState(rx.State):
@@ -65,9 +68,18 @@ class ButtonState(rx.State):
     # Method to go to the next step
     def next_button(self):
         self.current_step = (self.current_step + 1) % 5  # Loop through 5 steps
+        if (self.current_step % 5 == 1):
+            global gaslight_text
+            gaslight_text = generate_and_speak('gaslight.wav', 'The user\'s significant other is agitated and annoyed at the user.', 'You are guiding the user in how to de-escalate the situation to come to an understanding an a comically bombastic manner. Provide ways for the user to minimize the other person\'s emotions and stall for a resolution.', 100)
+        if (self.current_step % 5 == 2):
+            global poem_text
+            poem_text = generate_and_speak('poem.wav', "Create a 4 line poem that rhymes and gives random and funny complements to the significant other.", "You forgot the anniversary of you and your significant other so now you are writing a poem in their honor to make up for it. Be satirical and bombastic.", 60, 'To show how much I love and appreciate you, I wrote you a poem.')
+        if (self.current_step % 5 == 3):
+            generate_and_speak('flowers.wav', 'flower rec', 'tone', 50)
 
 # Function to display the safety measure deployment interface
 def deploy_safety_measures() -> rx.Component:
+    global gaslight_text, poem_text
     return rx.box(
         rx.spacer(),
         rx.text(
@@ -96,16 +108,16 @@ def deploy_safety_measures() -> rx.Component:
                     border="2px solid #ff006c",  # Outline for the active button
                 ),
                 rx.button(
-                    "Gaslight!",
-                    color="#FFFFFF",
-                    background_color="#000000",  # Not clickable, black background for others
-                    border_radius="50px",
-                    width="150px",
-                    height="50px",
-                    margin="0 20px",
-                    cursor="not-allowed",  # Indicate it's not clickable
-                    border="2px solid #ff006c",  # Pink outline for inactive buttons
-                )
+                "Gaslight!",
+                color="#FFFFFF",
+                background_color="#000000",  # Not clickable, black background for others
+                border_radius="50px",
+                width="150px",
+                height="50px",
+                margin="0 20px",
+                cursor="not-allowed",  # Indicate it's not clickable
+                border="2px solid #ff006c",  # Pink outline for inactive buttons
+            )
             ),
 
             # Second button
@@ -239,11 +251,10 @@ def dynamic_text():
     return rx.cond(
         ButtonState.current_step % 5 == 1,
         rx.text(
-            "Gaslight!",  # Change the text to "Gaslight!"
-            font_family="Rubik Bubbles", 
-            font_size="36px", 
-            font_weight="thin",  
-            color="#FFFFFF",
+            f"{gaslight_text}",
+            font_family = "Rubik Bubbles",
+            font_color = "#ffffff",
+            font_size = "36px",
             text_align="left"
         ),
         rx.cond(

@@ -8,6 +8,7 @@ from .views.camera import camera_feed, layout_with_video_and_another_component, 
 from .views.timer import countdown_clock
 from .backend.backend import State
 
+from .voice.main import generate_and_speak, speak
 
 import os
 from .face_recog import get_emotions
@@ -38,8 +39,7 @@ async def camera_task():
         print('camera task ended')
         return
 
-
-
+speak()
 
 def index() -> rx.Component:
     return rx.vstack(
